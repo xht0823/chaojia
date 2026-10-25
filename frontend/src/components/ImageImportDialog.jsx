@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { ImagePlus, ScanText, ShieldCheck, X } from 'lucide-react';
+import { Camera, ImagePlus, ScanText, ShieldCheck, X } from 'lucide-react';
 import { startLocalOcr } from '../lib/localOcr';
 import { TEXT_LIMIT, textLength, validateImage } from '../lib/imageValidation';
 
 export default function ImageImportDialog({ paused, hasDraft, onClose, onConfirm }) {
   const dialog = useRef(null);
   const picker = useRef(null);
+  const camera = useRef(null);
   const task = useRef(null);
   const generation = useRef(0);
   const preview = useRef(null);
@@ -108,7 +109,11 @@ export default function ImageImportDialog({ paused, hasDraft, onClose, onConfirm
     </div>
     <div className="space-y-5 p-5 sm:p-7">
       <p id="image-import-help" className="flex gap-2 rounded-xl bg-[#ECE8DA] p-3 text-xs leading-6 text-[#33332F]"><ShieldCheck className="mt-1 h-4 w-4 shrink-0" />按气泡左右位置自动标注：右侧为我、左侧为对方（微信习惯）。识别可能有错字，请先校对再填入草稿。</p>
-      <input ref={picker} id="screenshot-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="选择聊天截图" disabled={running || status === 'validating' || paused} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) select(file); }} className="block w-full rounded-xl border border-stone-200 bg-white p-3 text-sm text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#ECE8DA] file:px-3 file:py-2 file:text-[#33332F]" />
+      <div className="space-y-2">
+        <input ref={camera} id="screenshot-camera" type="file" accept="image/*" capture="environment" aria-label="拍照识别" disabled={running || status === 'validating' || paused} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) select(file); }} className="hidden" />
+        <button type="button" onClick={() => camera.current?.click()} disabled={running || status === 'validating' || paused} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1A1A1A] px-4 py-3 text-sm font-medium text-white hover:bg-[#1A1A1A] disabled:opacity-50"><Camera className="h-4 w-4" />拍照识别（手机端直接调起相机）</button>
+        <input ref={picker} id="screenshot-file" type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" aria-label="从相册选择聊天截图" disabled={running || status === 'validating' || paused} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) select(file); }} className="block w-full rounded-xl border border-stone-200 bg-white p-3 text-sm text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#ECE8DA] file:px-3 file:py-2 file:text-[#33332F]" />
+      </div>
       <p className="text-xs leading-6 text-stone-500">一次一张 PNG、JPEG 或静态 WebP；≤5 MiB、≤1600 万像素、单边≤16000像素。</p>
       {url && <div className="rounded-2xl border border-stone-200 bg-white p-3"><img src={url} alt="待识别聊天截图预览" className="mx-auto max-h-64 max-w-full rounded-lg object-contain" /><button type="button" disabled={running || paused} onClick={() => select(null)} className="mt-2 rounded-lg px-2 py-1 text-xs text-stone-500 hover:bg-stone-100 disabled:opacity-40">移除图片</button></div>}
       {status === 'validating' && <p role="status" className="text-sm text-stone-500">正在检查图片格式和尺寸…</p>}
